@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use super::Opt;
 
 macro_rules! valid_attributes {
     ( $(
@@ -162,10 +163,15 @@ keyword_attributes! {
     r#type => "type";
 }
 
-pub fn format(k: &str, v: &str) -> String {
+pub fn format(k: &str, v: &str, opt: &Opt) -> String {
     if VALID_ATTRIBUTES.contains(&k) {
         //TODO also convert value to integer or boolean if they are
-        format!(r#"{}("{}")"#, k, v)
+        if k == "class" {
+            let class = clean_up_class(v, opt);
+            format!(r#"{}("{}")"#, k, class)
+        }else{
+            format!(r#"{}("{}")"#, k, v)
+        }
     } else if KEYWORD_ATTRIBUTES
         .iter()
         .find(|(_ident, att)| *att == k)
@@ -175,6 +181,21 @@ pub fn format(k: &str, v: &str) -> String {
     } else {
         format!(r#"attr("{}", "{}")"#, k, v)
     }
+}
+
+
+fn clean_up_class(class: &str, opt: &Opt) -> String {
+    if let Some(ref prefix) = opt.remove_class_with_prefix{
+        remove_classes_with_prefix(class, &prefix)
+    }else{
+        class.to_string()
+    }
+}
+
+fn remove_classes_with_prefix(class: &str, prefix: &str) -> String {
+    let classes: Vec<&str> = class.split(' ').collect();
+    let filtered: Vec<String> = classes.iter().filter(|c|c.starts_with(prefix)).map(ToString::to_string).collect();
+    filtered.join(" ")
 }
 
 pub fn is_valid(k: &str) -> bool {

@@ -69,7 +69,7 @@ fn process_node(node: &Node, indent: i32, opt: &Opt) -> String {
                 if opt.trim_invalid && !attributes::is_valid(&key) {
                     // exclude
                 } else {
-                    att_buffer.push(attributes::format(&key, &value));
+                    att_buffer.push(attributes::format(&key, &value, opt));
                 }
             }
             elm_buffer += &att_buffer.join(", ");
@@ -84,8 +84,8 @@ fn process_node(node: &Node, indent: i32, opt: &Opt) -> String {
         }
 
         NodeData::Text { contents } => {
-            let text = contents.borrow();
-            if !text.trim().is_empty() {
+            let text = contents.borrow().trim().to_string();
+            if !text.is_empty() {
                 buffer += &format!(r#"text("{}")"#, text);
             }
         }
@@ -111,6 +111,9 @@ pub struct Opt {
         default_value = "true"
     )]
     trim_invalid: bool,
+
+    #[structopt(short = "rp", long = "remove-prefix")]
+    remove_class_with_prefix: Option<String>,
     /// Files to process
     #[structopt(name = "FILE", parse(from_os_str))]
     file: PathBuf,
