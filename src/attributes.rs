@@ -162,15 +162,31 @@ keyword_attributes! {
     r#type => "type";
 }
 
-
 pub fn format(k: &str, v: &str) -> String {
-    if VALID_ATTRIBUTES.contains(&k){
+    if VALID_ATTRIBUTES.contains(&k) {
         //TODO also convert value to integer or boolean if they are
-        format!(r#"{}("{}")"#,k,v)
-    }else if KEYWORD_ATTRIBUTES.iter().find(|(_ident, att)| *att == k).is_some(){
-        format!(r#"r#{}("{}")"#,k,v)
-    }else{
-        format!(r#"attr("{}", "{}")"#,k,v)
+        format!(r#"{}("{}")"#, k, v)
+    } else if KEYWORD_ATTRIBUTES
+        .iter()
+        .find(|(_ident, att)| *att == k)
+        .is_some()
+    {
+        format!(r#"r#{}("{}")"#, k, v)
+    } else {
+        format!(r#"attr("{}", "{}")"#, k, v)
     }
 }
 
+pub fn is_valid(k: &str) -> bool {
+    if VALID_ATTRIBUTES.contains(&k) {
+        true
+    } else if KEYWORD_ATTRIBUTES
+        .iter()
+        .find(|(_ident, att)| *att == k)
+        .is_some()
+    {
+        true
+    } else {
+        false
+    }
+}

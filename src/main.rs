@@ -3,21 +3,22 @@ extern crate html5ever;
 
 use html5ever::driver;
 use html5ever::local_name;
-use html5ever::ns;
 use html5ever::namespace_url;
+use html5ever::ns;
 use html5ever::parse_fragment;
 use html5ever::rcdom::Node;
 use html5ever::rcdom::{NodeData, RcDom};
 use html5ever::tendril::TendrilSink;
 use html5ever::QualName;
-use std::path::PathBuf;
-use structopt::StructOpt;
-use std::io;
 use std::fs::File;
+use std::io;
 use std::io::Read;
 use std::io::Write;
+use std::path::PathBuf;
+use structopt::StructOpt;
 
 mod attributes;
+mod tags;
 
 /// Initializes an HTML fragment parser.
 ///
@@ -40,37 +41,49 @@ fn padd(n: i32) -> String {
     buffer
 }
 
-fn process_node(node: &Node, indent: i32) -> String {
+fn process_node(node: &Node, indent: i32, opt: &Opt) -> String {
     let mut buffer = String::new();
     // process the children first
     let mut child_buffer = vec![];
     for child in node.children.borrow().iter() {
-        child_buffer.push(process_node(child, indent + 1));
+        let child_elm = process_node(child, indent + 1, opt);
+        if !child_elm.trim().is_empty() {
+            child_buffer.push(child_elm);
+        }
     }
     match &node.data {
         NodeData::Element { name, attrs, .. } => {
             let tag = name.local.to_string();
-            let mut elm_buffer = String::new();
-            elm_buffer += &format!("{}([", tag);
-            let mut att_buffer = vec![];
-            for att in attrs.borrow().iter() {
-                let key = att.name.local.to_string();
-                let value = att.value.to_string();
-                att_buffer.push(attributes::format(&key, &value));
+            if tags::is_valid_tag(&tag) {
+                let mut elm_buffer = String::new();
+                elm_buffer += &format!("{}([", tag);
+                let mut att_buffer = vec![];
+                for att in attrs.borrow().iter() {
+                    let key = att.name.local.to_string();
+                    let value = att.value.to_string();
+                    if opt.trim_invalid && !attributes::is_valid(&key) {
+                        // exclude
+                    } else {
+                        att_buffer.push(attributes::format(&key, &value));
+                    }
+                }
+                elm_buffer += &att_buffer.join(", ");
+                elm_buffer += &format!("],[\n");
+                elm_buffer += &format!(
+                    "{}{}",
+                    padd(indent),
+                    child_buffer.join(&format!(",\n{}", padd(indent)))
+                );
+                elm_buffer += &format!("\n{}])", padd(indent - 1));
+                buffer += &elm_buffer
             }
-            elm_buffer += &att_buffer.join(", ");
-            elm_buffer += &format!("],[\n");
-            elm_buffer += &format!(
-                "{}{}",
-                padd(indent),
-                child_buffer.join(&format!(",\n{}", padd(indent)))
-            );
-            elm_buffer += &format!("\n{}])", padd(indent - 1));
-            buffer += &elm_buffer
         }
 
         NodeData::Text { contents } => {
-            buffer += &format!(r#"text("{}")"#, contents.borrow());
+            let text = contents.borrow();
+            if !text.trim().is_empty() {
+                buffer += &format!(r#"text("{}")"#, text);
+            }
         }
         _ => {
             buffer += &child_buffer.join(",");
@@ -79,13 +92,21 @@ fn process_node(node: &Node, indent: i32) -> String {
     buffer
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Debug, Default)]
 #[structopt(name = "html2sauron")]
-struct Opt {
+pub struct Opt {
     /// Output file
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: Option<PathBuf>,
 
+    /// Trim invalid attributes
+    #[structopt(
+        short = "trim",
+        long = "trim_invalid",
+        parse(try_from_str),
+        default_value = "true"
+    )]
+    trim_invalid: bool,
     /// Files to process
     #[structopt(name = "FILE", parse(from_os_str))]
     file: PathBuf,
@@ -104,19 +125,19 @@ fn write_to_file(file: &PathBuf, sauron: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub fn html2sauron(html: &str) -> String {
+pub fn html2sauron(html: &str, opt: &Opt) -> String {
     let parser = make_parser();
     let fragment = parser.one(html);
-    process_node(&fragment.document, 0)
+    process_node(&fragment.document, 0, opt)
 }
 
 fn main() -> io::Result<()> {
     let opt = Opt::from_args();
     let html = read_file(&opt.file)?;
-    let sauron = html2sauron(&html);
-    if let Some(output) = &opt.output{
+    let sauron = html2sauron(&html, &opt);
+    if let Some(output) = &opt.output {
         write_to_file(output, &sauron)?;
-    }else{
+    } else {
         println!("{}", sauron);
     }
     Ok(())
@@ -125,12 +146,38 @@ fn main() -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn test1() {
         let html = "<a>Hello world</a><div class='btn large'>link to here</div><utag>how to deal with this</utag>";
-        let view = html2sauron(html);
-        println!("{}",view);
-        assert_eq!(view, r#"
+        let view = html2sauron(html, &Opt::default());
+        println!("{}", view);
+        assert_eq!(
+            view,
+            r#"
+html([],[
+    a([],[
+        text("Hello world")
+    ]),
+    div([class("btn large")],[
+        text("link to here")
+    ])
+])
+                   "#
+            .trim()
+            .to_string()
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_with_invalid_tag() {
+        let html = "<a>Hello world</a><div class='btn large'>link to here</div><utag>how to deal with this</utag>";
+        let view = html2sauron(html, &Opt::default());
+        println!("{}", view);
+        assert_eq!(
+            view,
+            r#"
 html([],[
     a([],[
         text("Hello world")
@@ -142,6 +189,9 @@ html([],[
         text("how to deal with this")
     ])
 ])
-                   "#.trim().to_string());
+                   "#
+            .trim()
+            .to_string()
+        );
     }
 }
