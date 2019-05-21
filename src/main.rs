@@ -54,29 +54,33 @@ fn process_node(node: &Node, indent: i32, opt: &Opt) -> String {
     match &node.data {
         NodeData::Element { name, attrs, .. } => {
             let tag = name.local.to_string();
-            if tags::is_valid_tag(&tag) {
-                let mut elm_buffer = String::new();
-                elm_buffer += &format!("{}([", tag);
-                let mut att_buffer = vec![];
-                for att in attrs.borrow().iter() {
-                    let key = att.name.local.to_string();
-                    let value = att.value.to_string();
-                    if opt.trim_invalid && !attributes::is_valid(&key) {
-                        // exclude
-                    } else {
-                        att_buffer.push(attributes::format(&key, &value));
-                    }
+            let corrected_tab = if tags::is_valid_tag(&tag) {
+                tag
+            } else {
+                // replace custom tag with div
+                "div".to_string()
+            };
+            let mut elm_buffer = String::new();
+            elm_buffer += &format!("{}([", corrected_tag);
+            let mut att_buffer = vec![];
+            for att in attrs.borrow().iter() {
+                let key = att.name.local.to_string();
+                let value = att.value.to_string();
+                if opt.trim_invalid && !attributes::is_valid(&key) {
+                    // exclude
+                } else {
+                    att_buffer.push(attributes::format(&key, &value));
                 }
-                elm_buffer += &att_buffer.join(", ");
-                elm_buffer += &format!("],[\n");
-                elm_buffer += &format!(
-                    "{}{}",
-                    padd(indent),
-                    child_buffer.join(&format!(",\n{}", padd(indent)))
-                );
-                elm_buffer += &format!("\n{}])", padd(indent - 1));
-                buffer += &elm_buffer
             }
+            elm_buffer += &att_buffer.join(", ");
+            elm_buffer += &format!("],[\n");
+            elm_buffer += &format!(
+                "{}{}",
+                padd(indent),
+                child_buffer.join(&format!(",\n{}", padd(indent)))
+            );
+            elm_buffer += &format!("\n{}])", padd(indent - 1));
+            buffer += &elm_buffer
         }
 
         NodeData::Text { contents } => {
