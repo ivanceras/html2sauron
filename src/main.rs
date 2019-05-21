@@ -1,23 +1,23 @@
-#[macro_use]
+//#![deny(warnings)]
 extern crate html5ever;
 
 use html5ever::driver;
-use html5ever::driver::ParseOpts;
 use html5ever::local_name;
 use html5ever::ns;
-use html5ever::parse_document;
+use html5ever::namespace_url;
 use html5ever::parse_fragment;
 use html5ever::rcdom::Node;
-use html5ever::rcdom::{Handle, NodeData, RcDom};
+use html5ever::rcdom::{NodeData, RcDom};
 use html5ever::tendril::TendrilSink;
 use html5ever::QualName;
-use html5ever::*;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use std::io;
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
+
+mod attributes;
 
 /// Initializes an HTML fragment parser.
 ///
@@ -34,7 +34,7 @@ fn make_parser() -> driver::Parser<RcDom> {
 
 fn padd(n: i32) -> String {
     let mut buffer = String::new();
-    for i in 0..n {
+    for _ in 0..n {
         buffer += "    ";
     }
     buffer
@@ -56,7 +56,7 @@ fn process_node(node: &Node, indent: i32) -> String {
             for att in attrs.borrow().iter() {
                 let key = att.name.local.to_string();
                 let value = att.value.to_string();
-                att_buffer.push(format!(r#"{}("{}")"#, key, value));
+                att_buffer.push(attributes::format(&key, &value));
             }
             elm_buffer += &att_buffer.join(", ");
             elm_buffer += &format!("],[\n");
@@ -100,7 +100,7 @@ fn read_file(file: &PathBuf) -> io::Result<String> {
 
 fn write_to_file(file: &PathBuf, sauron: &str) -> io::Result<()> {
     let mut file = File::create(file)?;
-    file.write_all(sauron.as_bytes());
+    file.write_all(sauron.as_bytes())?;
     Ok(())
 }
 
@@ -115,7 +115,7 @@ fn main() -> io::Result<()> {
     let html = read_file(&opt.file)?;
     let sauron = html2sauron(&html);
     if let Some(output) = &opt.output{
-        write_to_file(output, &sauron);
+        write_to_file(output, &sauron)?;
     }else{
         println!("{}", sauron);
     }

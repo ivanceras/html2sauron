@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 html5ever = "0.23.0"
 structopt = "0.2.15"
+lazy_static = "1.3"
