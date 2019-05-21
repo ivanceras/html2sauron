@@ -54,7 +54,7 @@ fn process_node(node: &Node, indent: i32, opt: &Opt) -> String {
     match &node.data {
         NodeData::Element { name, attrs, .. } => {
             let tag = name.local.to_string();
-            let corrected_tab = if tags::is_valid_tag(&tag) {
+            let corrected_tag = if tags::is_valid_tag(&tag) {
                 tag
             } else {
                 // replace custom tag with div
@@ -165,6 +165,9 @@ html([],[
     ]),
     div([class("btn large")],[
         text("link to here")
+    ]),
+    div([],[
+        text("how to deal with this")
     ])
 ])
                    "#
