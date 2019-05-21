@@ -80,12 +80,24 @@ fn process_element(elm: &NodeData, children_str: &str, indent: i32, opt: &Opt) -
         NodeData::Text { contents } => {
             let text = contents.borrow();
             if !text.trim().is_empty() {
-                Some(format!(r#"text("{}")"#, text.trim()))
+                let text = text.trim().to_string();
+                // use raw formatting when there are quotes inside text
+                if text.contains("\""){
+                    Some(format!("text(r#"{}"#)", text))
+                }else{
+                    Some(format!("text("{}")", text))
+                }
             } else {
                 None
             }
         }
-        _ => Some(children_str.to_string()),
+        _elm => {
+            if children_str.trim().is_empty() {
+                None
+            } else {
+                Some(children_str.to_string())
+            }
+        }
     }
 }
 
@@ -93,7 +105,7 @@ fn process_node(node: &Node, indent: i32, opt: &Opt) -> Option<String> {
     // process the children first
     let mut child_buffer = vec![];
     for child in node.children.borrow().iter() {
-        if let Some(child_elm) = process_node(child, indent + 1, opt){
+        if let Some(child_elm) = process_node(child, indent + 1, opt) {
             child_buffer.push(child_elm);
         }
     }
@@ -145,9 +157,9 @@ fn write_to_file(file: &PathBuf, sauron: &str) -> io::Result<()> {
 pub fn html2sauron(html: &str, opt: &Opt) -> String {
     let parser = make_parser();
     let fragment = parser.one(html);
-    if let Some(code) = process_node(&fragment.document, 0, opt){
+    if let Some(code) = process_node(&fragment.document, 0, opt) {
         code
-    }else{
+    } else {
         "".to_string()
     }
 }
