@@ -112,11 +112,13 @@ pub struct Opt {
     )]
     trim_invalid: bool,
 
-    #[structopt(short = "rp", long = "remove-prefix")]
-    remove_class_with_prefix: Option<String>,
     /// Files to process
     #[structopt(name = "FILE", parse(from_os_str))]
     file: PathBuf,
+
+    /// Remove classes that is prefix with argument
+    #[structopt(short = "r", long = "remove-classes-with-prefix")]
+    remove_class_with_prefix: Option<String>,
 }
 
 fn read_file(file: &PathBuf) -> io::Result<String> {
