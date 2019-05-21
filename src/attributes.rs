@@ -1,5 +1,5 @@
-use lazy_static::lazy_static;
 use super::Opt;
+use lazy_static::lazy_static;
 
 macro_rules! valid_attributes {
     ( $(
@@ -168,8 +168,12 @@ pub fn format(k: &str, v: &str, opt: &Opt) -> String {
         //TODO also convert value to integer or boolean if they are
         if k == "class" {
             let class = clean_up_class(v, opt);
-            format!(r#"{}("{}")"#, k, class)
-        }else{
+            if class.trim().is_empty() {
+                "".to_string()
+            } else {
+                format!(r#"{}("{}")"#, k, class)
+            }
+        } else {
             format!(r#"{}("{}")"#, k, v)
         }
     } else if KEYWORD_ATTRIBUTES
@@ -183,18 +187,21 @@ pub fn format(k: &str, v: &str, opt: &Opt) -> String {
     }
 }
 
-
 fn clean_up_class(class: &str, opt: &Opt) -> String {
-    if let Some(ref prefix) = opt.remove_class_with_prefix{
+    if let Some(ref prefix) = opt.strip_class_with_prefix {
         remove_classes_with_prefix(class, &prefix)
-    }else{
+    } else {
         class.to_string()
     }
 }
 
 fn remove_classes_with_prefix(class: &str, prefix: &str) -> String {
     let classes: Vec<&str> = class.split(' ').collect();
-    let filtered: Vec<String> = classes.iter().filter(|c|c.starts_with(prefix)).map(ToString::to_string).collect();
+    let filtered: Vec<String> = classes
+        .iter()
+        .filter(|c| !c.starts_with(prefix))
+        .map(ToString::to_string)
+        .collect();
     filtered.join(" ")
 }
 
