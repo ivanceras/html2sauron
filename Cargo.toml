@@ -1,0 +1,9 @@
+[package]
+name = "html2sauron"
+version = "0.1.0"
+authors = ["lee"]
+edition = "2018"
+
+[dependencies]
+html5ever = "0.23.0"
+structopt = "0.2.15"
