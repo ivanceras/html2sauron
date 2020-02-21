@@ -1,10 +1,6 @@
 //#![deny(warnings)]
 use sauron::parser::convert_html_to_syntax;
-use sauron::{
-    html::units::*,
-    html::{attributes::*, events::*, *},
-    input, Cmd, Component, Node, Program, *,
-};
+use sauron::prelude::*;
 use wasm_bindgen::prelude::*;
 
 #[macro_use]
