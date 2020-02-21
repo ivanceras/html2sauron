@@ -44,26 +44,40 @@ impl Component<Msg> for App {
                     []
                 ),
                 div!(
-                    [styles([("display", "flex"), ("flex-direction", "row")])],
+                    [styles([
+                        ("display", "flex"),
+                        ("flex-direction", "row"),
+                        ("margin-bottom", "50px"),
+                    ])],
                     [
+                        div!(
+                            [styles([
+                                ("display", "flex"),
+                                ("flex-direction", "row"),
+                                ("align-items", "center"),
+                                ("padding", "10px"),
+                            ])],
+                            [
+                                input!(
+                                    [
+                                        type_("checkbox"),
+                                        id("use_macro_check"),
+                                        onclick(|_| Msg::ToggleMacro)
+                                    ],
+                                    []
+                                )
+                                .add_attributes(attrs_flag([(
+                                    "checked",
+                                    "checked",
+                                    self.use_macro
+                                )])),
+                                label!([for_("use_macro_check")], [text("Use macro")])
+                            ]
+                        ),
                         button!(
                             [styles([("width", px(200))]), onclick(|_| Msg::Convert)],
                             [text("Convert >> ")]
                         ),
-                        input!(
-                            [
-                                type_("checkbox"),
-                                id("use_macro_check"),
-                                onclick(|_| Msg::ToggleMacro)
-                            ],
-                            []
-                        )
-                        .add_attributes(attrs_flag([(
-                            "checked",
-                            "checked",
-                            self.use_macro
-                        )])),
-                        label!([for_("use_macro_check")], [text("Use macro")])
                     ]
                 ),
                 label!([for_("sauron_syntax")], [text("Sauron view code")]),
