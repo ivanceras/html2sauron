@@ -80,7 +80,16 @@ impl Component<Msg> for App {
                         ),
                     ]
                 ),
-                label!([for_("sauron_syntax")], [text("Sauron view code")]),
+                label!(
+                    [for_("sauron_syntax")],
+                    [
+                        a!(
+                            [href("https://github.com/ivanceras/sauron")],
+                            [text("Sauron")]
+                        ),
+                        text(" view code:")
+                    ]
+                ),
                 textarea!(
                     [
                         id("sauron_syntax"),
