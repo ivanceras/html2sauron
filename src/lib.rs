@@ -106,17 +106,15 @@ impl Component<Msg> for App {
         match msg {
             Msg::ChangeInput(input) => {
                 self.input = input.clone();
-                /*
-                self.output = convert_html_to_syntax(&input, self.use_macro);
-                log::debug!("self.output: {}", self.output);
-                */
             }
             Msg::Convert => {
-                self.output = convert_html_to_syntax(&self.input, self.use_macro);
+                self.output =
+                    convert_html_to_syntax(&self.input, self.use_macro).expect("must not error");
             }
             Msg::ToggleMacro => {
                 self.use_macro = !self.use_macro;
-                self.output = convert_html_to_syntax(&self.input, self.use_macro);
+                self.output =
+                    convert_html_to_syntax(&self.input, self.use_macro).expect("must not error");
             }
         }
         Cmd::none()
