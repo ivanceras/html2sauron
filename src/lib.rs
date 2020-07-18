@@ -1,6 +1,6 @@
 //#![deny(warnings)]
-use sauron::parser::convert_html_to_syntax;
 use sauron::prelude::*;
+use sauron_syntax::html_to_syntax;
 use wasm_bindgen::prelude::*;
 
 #[macro_use]
@@ -38,7 +38,7 @@ impl Component<Msg> for App {
                     [
                         id("html_input"),
                         styles([("height", px(400)),]),
-                        oninput(|input| Msg::ChangeInput(input.value)),
+                        on_input(|input| Msg::ChangeInput(input.value)),
                         value(&self.input),
                     ],
                     []
@@ -62,7 +62,7 @@ impl Component<Msg> for App {
                                     [
                                         type_("checkbox"),
                                         id("use_macro_check"),
-                                        onclick(|_| Msg::ToggleMacro)
+                                        on_click(|_| Msg::ToggleMacro)
                                     ],
                                     []
                                 )
@@ -75,7 +75,7 @@ impl Component<Msg> for App {
                             ]
                         ),
                         button!(
-                            [styles([("width", px(200))]), onclick(|_| Msg::Convert)],
+                            [styles([("width", px(200))]), on_click(|_| Msg::Convert)],
                             [text("Convert >> ")]
                         ),
                     ]
@@ -108,13 +108,11 @@ impl Component<Msg> for App {
                 self.input = input.clone();
             }
             Msg::Convert => {
-                self.output =
-                    convert_html_to_syntax(&self.input, self.use_macro).expect("must not error");
+                self.output = html_to_syntax(&self.input, self.use_macro).expect("must not error");
             }
             Msg::ToggleMacro => {
                 self.use_macro = !self.use_macro;
-                self.output =
-                    convert_html_to_syntax(&self.input, self.use_macro).expect("must not error");
+                self.output = html_to_syntax(&self.input, self.use_macro).expect("must not error");
             }
         }
         Cmd::none()
@@ -124,5 +122,6 @@ impl Component<Msg> for App {
 #[wasm_bindgen(start)]
 pub fn main() {
     console_log::init_with_level(log::Level::Trace).expect("must be initiated");
+    info!("started");
     Program::mount_to_body(App::new());
 }

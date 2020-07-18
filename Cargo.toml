@@ -10,7 +10,8 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-sauron = { path = "../sauron", version = "0.22.0", features = ["with-parser"] }
+sauron = { version = "0.27.0", features = ["with-parser"] }
+sauron-syntax = "0.1"
 wasm-bindgen = "0.2.40"
 console_error_panic_hook = { version = "0.1.1", optional = true }
 wee_alloc = { version = "0.4.3", optional = true }
