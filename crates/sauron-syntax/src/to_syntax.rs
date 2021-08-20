@@ -103,13 +103,17 @@ impl ToSyntax for Value {
 
 impl<MSG: 'static> ToSyntax for Element<MSG> {
     fn to_syntax(&self, buffer: &mut dyn Write, use_macros: bool, indent: usize) -> fmt::Result {
+        let self_closing = html_parser::is_self_closing(self.tag());
         if use_macros {
+            write!(buffer, "{}", make_indent(indent))?;
             write!(buffer, "<{}", self.tag())?;
             for attr in self.get_attributes().iter() {
                 write!(buffer, " ")?;
                 attr.to_syntax(buffer, use_macros, indent)?;
             }
-            write!(buffer, ">")?;
+            if !self_closing {
+                write!(buffer, ">")?;
+            }
             let children = self.get_children();
             let first_child = children.get(0);
             let is_first_child_text_node = first_child.map(|node| node.is_text()).unwrap_or(false);
@@ -121,17 +125,20 @@ impl<MSG: 'static> ToSyntax for Element<MSG> {
             } else {
                 // otherwise print all child nodes with each line and indented
                 for child in self.get_children() {
-                    write!(buffer, "\n{}", "    ".repeat(indent + 1))?;
+                    write!(buffer, "\n")?;
                     child.to_syntax(buffer, use_macros, indent + 1)?;
-                    write!(buffer, ",")?;
                 }
             }
-            // only make a new line if the child is not a text child node and if there are more than 1
-            // child
-            if !is_lone_child_text_node && !children.is_empty() {
-                write!(buffer, "\n{}", "    ".repeat(indent))?;
+            if self_closing {
+                write!(buffer, "/>")?;
+            } else {
+                if is_lone_child_text_node || children.is_empty() {
+                    // no new line if a lone child text node or empty
+                } else {
+                    write!(buffer, "\n{}", make_indent(indent))?;
+                }
+                write!(buffer, "</{}>", self.tag())?;
             }
-            write!(buffer, "</{}>", self.tag())?;
         } else {
             write!(buffer, "{}(", self.tag())?;
             write!(buffer, "vec![")?;
@@ -152,7 +159,7 @@ impl<MSG: 'static> ToSyntax for Element<MSG> {
             } else {
                 // otherwise print all child nodes with each line and indented
                 for child in self.get_children() {
-                    write!(buffer, "\n{}", "    ".repeat(indent + 1))?;
+                    write!(buffer, "\n{}", make_indent(indent + 1))?;
                     child.to_syntax(buffer, use_macros, indent + 1)?;
                     write!(buffer, ",")?;
                 }
@@ -160,10 +167,15 @@ impl<MSG: 'static> ToSyntax for Element<MSG> {
             // only make a new line if the child is not a text child node and if there are more than 1
             // child
             if !is_lone_child_text_node && !children.is_empty() {
-                write!(buffer, "\n{}", "    ".repeat(indent))?;
+                write!(buffer, "\n{}", make_indent(indent))?;
             }
             write!(buffer, "])")?;
         }
         Ok(())
     }
+}
+
+/// convenient function to create indent
+fn make_indent(n: usize) -> String {
+    "    ".repeat(n)
 }

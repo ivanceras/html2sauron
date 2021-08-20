@@ -9,6 +9,7 @@
 )]
 //! A utility crate which provides conversion of html text into sauron view syntax
 //!
+pub use sauron::prelude::*;
 pub use sauron_markdown::html_parser;
 pub use sauron_markdown::html_parser::ParseError;
 pub use to_syntax::ToSyntax;
@@ -16,14 +17,27 @@ pub use to_syntax::ToSyntax;
 mod to_syntax;
 
 /// converts html to sauron view syntax
-pub fn html_to_syntax(html: &str, use_macro: bool) -> Result<String, ParseError> {
-    log::info!("input: {}", html);
-    println!("input: {}", html);
-    match html_parser::parse_simple::<()>(html) {
-        Ok(nodes) => {
+pub fn html_to_syntax(html_str: &str, use_macro: bool) -> Result<String, ParseError> {
+    match html_parser::parse_simple::<()>(html_str) {
+        Ok(mut nodes) => {
             let mut buffer = String::new();
-            for node in nodes {
-                node.to_syntax(&mut buffer, use_macro, 0)?;
+            if use_macro {
+                let root_node = if nodes.len() > 1 {
+                    div(vec![], nodes)
+                } else {
+                    if nodes.len() == 1 {
+                        nodes.remove(0)
+                    } else {
+                        html(vec![], vec![])
+                    }
+                };
+                buffer += "node! {\n";
+                root_node.to_syntax(&mut buffer, use_macro, 1)?;
+                buffer += "\n}";
+            } else {
+                for node in nodes {
+                    node.to_syntax(&mut buffer, use_macro, 0)?;
+                }
             }
             Ok(buffer)
         }
