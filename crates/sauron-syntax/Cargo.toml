@@ -1,0 +1,17 @@
+[package]
+name = "sauron-syntax"
+version = "0.1.4"
+authors = ["Jovansonlee Cesar <ivanceras@gmail.com>"]
+edition = "2018"
+license = "MIT"
+description = "A library for parsing html syntax and converting it into sauron view"
+repository = "https://github.com/ivanceras/sauron"
+documentation = "https://docs.rs/sauron-syntax"
+keywords = ["svg", "html", "parser"]
+
+
+[dependencies]
+sauron = "0.41"
+log = "0.4"
+sauron-markdown = "0.41"
+#sauron-markdown = { version = "0.41", path = "../../sauron-markdown" }
