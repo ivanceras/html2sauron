@@ -20,24 +20,23 @@ mod to_syntax;
 pub fn html_to_syntax(html_str: &str, use_macro: bool) -> Result<String, ParseError> {
     match html_parser::parse_simple::<()>(html_str) {
         Ok(mut nodes) => {
+            let root_node = if nodes.len() > 1 {
+                div(vec![], nodes)
+            } else {
+                if nodes.len() == 1 {
+                    nodes.remove(0)
+                } else {
+                    html(vec![], vec![])
+                }
+            };
+
             let mut buffer = String::new();
             if use_macro {
-                let root_node = if nodes.len() > 1 {
-                    div(vec![], nodes)
-                } else {
-                    if nodes.len() == 1 {
-                        nodes.remove(0)
-                    } else {
-                        html(vec![], vec![])
-                    }
-                };
                 buffer += "node! {\n";
                 root_node.to_syntax(&mut buffer, use_macro, 1)?;
                 buffer += "\n}";
             } else {
-                for node in nodes {
-                    node.to_syntax(&mut buffer, use_macro, 0)?;
-                }
+                root_node.to_syntax(&mut buffer, use_macro, 0)?;
             }
             Ok(buffer)
         }

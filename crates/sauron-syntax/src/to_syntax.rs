@@ -140,11 +140,15 @@ impl<MSG: 'static> ToSyntax for Element<MSG> {
                 write!(buffer, "</{}>", self.tag())?;
             }
         } else {
+            write!(buffer, "{}", make_indent(indent))?;
             write!(buffer, "{}(", self.tag())?;
             write!(buffer, "vec![")?;
-            for attr in self.get_attributes().iter() {
+            let total_attrs = self.get_attributes().len();
+            for (i, attr) in self.get_attributes().iter().enumerate() {
                 attr.to_syntax(buffer, use_macros, indent)?;
-                write!(buffer, ",")?;
+                if i < total_attrs - 1 {
+                    write!(buffer, ", ")?;
+                }
             }
             write!(buffer, "],")?;
             write!(buffer, "vec![")?;
@@ -159,14 +163,14 @@ impl<MSG: 'static> ToSyntax for Element<MSG> {
             } else {
                 // otherwise print all child nodes with each line and indented
                 for child in self.get_children() {
-                    write!(buffer, "\n{}", make_indent(indent + 1))?;
+                    write!(buffer, "\n")?;
                     child.to_syntax(buffer, use_macros, indent + 1)?;
                     write!(buffer, ",")?;
                 }
             }
-            // only make a new line if the child is not a text child node and if there are more than 1
-            // child
-            if !is_lone_child_text_node && !children.is_empty() {
+            if is_lone_child_text_node || children.is_empty() {
+                // no new line if a lone child text node or empty
+            } else {
                 write!(buffer, "\n{}", make_indent(indent))?;
             }
             write!(buffer, "])")?;
