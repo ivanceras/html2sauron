@@ -15,6 +15,7 @@ pub struct App {
     input: String,
     output: String,
     use_macro: bool,
+    node_checkbox: bool,
 }
 
 impl App {
@@ -22,12 +23,17 @@ impl App {
         App {
             input: String::new(),
             output: String::new(),
-            use_macro: false,
+            use_macro: true,
+            node_checkbox: true,
         }
     }
 }
 
 impl Application<Msg> for App {
+    fn init(&mut self, _: Program<Self, Msg>) -> Cmd<Self, Msg> {
+        self.node_checkbox = self.use_macro;
+        Cmd::none()
+    }
     fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
         match msg {
             Msg::ChangeInput(input) => {
@@ -80,15 +86,14 @@ impl Application<Msg> for App {
                                         r#type("checkbox"),
                                         id("use_macro_check"),
                                         on_click(|_| Msg::ToggleMacro),
+                                        checked(self.use_macro),
                                     ],
                                     vec![],
-                                )
-                                .add_attributes(attrs_flag([(
-                                    "checked",
-                                    "checked",
-                                    self.use_macro,
-                                )])),
-                                label(vec![r#for("use_macro_check")], vec![text("Use macro")]),
+                                ),
+                                label(
+                                    vec![r#for("use_macro_check")],
+                                    vec![text("Use node! macro")],
+                                ),
                             ],
                         ),
                         button(
