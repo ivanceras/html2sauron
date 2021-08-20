@@ -18,7 +18,10 @@ impl<MSG: 'static> ToSyntax for Node<MSG> {
                     write!(buffer, "text(\"{}\")", text.text)
                 }
             }
-            Node::Element(element) => element.to_syntax(buffer, use_macros, indent),
+            Node::Element(element) => {
+                write!(buffer, "{}", make_indent(indent))?;
+                element.to_syntax(buffer, use_macros, indent)
+            }
         }
     }
 }
@@ -33,15 +36,13 @@ impl<MSG: 'static> ToSyntax for Attribute<MSG> {
                             write!(buffer, "xlink::{}", self.name().to_string(),)?;
                             write!(buffer, "=")?;
                             simple.to_syntax(buffer, use_macros, indent)?;
+                        } else if let Some(att_name) = html_parser::match_attribute(self.name()) {
+                            write!(buffer, "{}", att_name)?;
+                            write!(buffer, "=")?;
+                            simple.to_syntax(buffer, use_macros, indent)?;
                         } else {
-                            if let Some(att_name) = html_parser::match_attribute(&self.name()) {
-                                write!(buffer, "{}", att_name)?;
-                                write!(buffer, "=")?;
-                                simple.to_syntax(buffer, use_macros, indent)?;
-                            } else {
-                                write!(buffer, "{}=", self.name().to_string(),)?;
-                                simple.to_syntax(buffer, use_macros, indent)?;
-                            }
+                            write!(buffer, "{}=", self.name().to_string(),)?;
+                            simple.to_syntax(buffer, use_macros, indent)?;
                         }
                     }
                     AttributeValue::Style(styles_att) => {
@@ -61,17 +62,15 @@ impl<MSG: 'static> ToSyntax for Attribute<MSG> {
                             write!(buffer, "(")?;
                             simple.to_syntax(buffer, use_macros, indent)?;
                             write!(buffer, ")")?;
+                        } else if let Some(att_name) = html_parser::match_attribute(self.name()) {
+                            write!(buffer, "{}", att_name)?;
+                            write!(buffer, "(")?;
+                            simple.to_syntax(buffer, use_macros, indent)?;
+                            write!(buffer, ")")?;
                         } else {
-                            if let Some(att_name) = html_parser::match_attribute(&self.name()) {
-                                write!(buffer, "{}", att_name)?;
-                                write!(buffer, "(")?;
-                                simple.to_syntax(buffer, use_macros, indent)?;
-                                write!(buffer, ")")?;
-                            } else {
-                                write!(buffer, r#"attr("{}","#, self.name().to_string(),)?;
-                                simple.to_syntax(buffer, use_macros, indent)?;
-                                write!(buffer, ")")?;
-                            }
+                            write!(buffer, r#"attr("{}","#, self.name().to_string(),)?;
+                            simple.to_syntax(buffer, use_macros, indent)?;
+                            write!(buffer, ")")?;
                         }
                     }
                     AttributeValue::Style(styles_att) => {
@@ -91,11 +90,8 @@ impl<MSG: 'static> ToSyntax for Attribute<MSG> {
 
 impl ToSyntax for Value {
     fn to_syntax(&self, buffer: &mut dyn Write, _use_macros: bool, _indent: usize) -> fmt::Result {
-        match self.as_str() {
-            Some(v_str) => {
-                write!(buffer, "\"{}\"", v_str)?;
-            }
-            None => (),
+        if let Some(v_str) = self.as_str() {
+            write!(buffer, "\"{}\"", v_str)?;
         }
         Ok(())
     }
@@ -105,7 +101,6 @@ impl<MSG: 'static> ToSyntax for Element<MSG> {
     fn to_syntax(&self, buffer: &mut dyn Write, use_macros: bool, indent: usize) -> fmt::Result {
         let self_closing = html_parser::is_self_closing(self.tag());
         if use_macros {
-            write!(buffer, "{}", make_indent(indent))?;
             write!(buffer, "<{}", self.tag())?;
             for attr in self.get_attributes().iter() {
                 write!(buffer, " ")?;
@@ -125,7 +120,7 @@ impl<MSG: 'static> ToSyntax for Element<MSG> {
             } else {
                 // otherwise print all child nodes with each line and indented
                 for child in self.get_children() {
-                    write!(buffer, "\n")?;
+                    writeln!(buffer)?;
                     child.to_syntax(buffer, use_macros, indent + 1)?;
                 }
             }
@@ -140,7 +135,6 @@ impl<MSG: 'static> ToSyntax for Element<MSG> {
                 write!(buffer, "</{}>", self.tag())?;
             }
         } else {
-            write!(buffer, "{}", make_indent(indent))?;
             write!(buffer, "{}(", self.tag())?;
             write!(buffer, "vec![")?;
             let total_attrs = self.get_attributes().len();
@@ -163,7 +157,7 @@ impl<MSG: 'static> ToSyntax for Element<MSG> {
             } else {
                 // otherwise print all child nodes with each line and indented
                 for child in self.get_children() {
-                    write!(buffer, "\n")?;
+                    writeln!(buffer)?;
                     child.to_syntax(buffer, use_macros, indent + 1)?;
                     write!(buffer, ",")?;
                 }

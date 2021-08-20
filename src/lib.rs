@@ -1,4 +1,5 @@
 #![deny(warnings)]
+#![deny(clippy::all)]
 use sauron::prelude::*;
 use sauron_syntax::html_to_syntax;
 
@@ -18,9 +19,9 @@ pub struct App {
     node_checkbox: bool,
 }
 
-impl App {
-    pub fn new() -> Self {
-        App {
+impl Default for App {
+    fn default() -> Self {
+        Self {
             input: String::new(),
             output: String::new(),
             use_macro: true,
@@ -37,7 +38,7 @@ impl Application<Msg> for App {
     fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
         match msg {
             Msg::ChangeInput(input) => {
-                self.input = input.clone();
+                self.input = input;
             }
             Msg::Convert => {
                 self.output = html_to_syntax(&self.input, self.use_macro).expect("must not error");
@@ -73,6 +74,10 @@ impl Application<Msg> for App {
                         ("margin-bottom", "50px"),
                     ])],
                     vec![
+                        button(
+                            vec![styles([("width", px(200))]), on_click(|_| Msg::Convert)],
+                            vec![text("Convert >> ")],
+                        ),
                         div(
                             vec![styles([
                                 ("display", "flex"),
@@ -95,10 +100,6 @@ impl Application<Msg> for App {
                                     vec![text("Use node! macro")],
                                 ),
                             ],
-                        ),
-                        button(
-                            vec![styles([("width", px(200))]), on_click(|_| Msg::Convert)],
-                            vec![text("Convert >> ")],
                         ),
                     ],
                 ),
@@ -129,5 +130,5 @@ impl Application<Msg> for App {
 pub fn main() {
     console_log::init_with_level(log::Level::Trace).expect("must be initiated");
     info!("started");
-    Program::mount_to_body(App::new());
+    Program::mount_to_body(App::default());
 }

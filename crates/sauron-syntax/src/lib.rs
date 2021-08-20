@@ -20,14 +20,10 @@ mod to_syntax;
 pub fn html_to_syntax(html_str: &str, use_macro: bool) -> Result<String, ParseError> {
     match html_parser::parse_simple::<()>(html_str) {
         Ok(mut nodes) => {
-            let root_node = if nodes.len() > 1 {
-                div(vec![], nodes)
-            } else {
-                if nodes.len() == 1 {
-                    nodes.remove(0)
-                } else {
-                    html(vec![], vec![])
-                }
+            let root_node = match nodes.len() {
+                0 => html(vec![], vec![]),
+                1 => nodes.remove(0),
+                _ => div(vec![], nodes),
             };
 
             let mut buffer = String::new();
