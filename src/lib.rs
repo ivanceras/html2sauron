@@ -2,6 +2,7 @@
 #![deny(clippy::all)]
 use sauron::prelude::*;
 use sauron_syntax::html_to_syntax;
+use sauron_syntax::Options;
 
 #[macro_use]
 extern crate log;
@@ -10,13 +11,15 @@ pub enum Msg {
     ChangeInput(String),
     Convert,
     ToggleMacro,
+    ToggleArray,
 }
 
 pub struct App {
     input: String,
     output: String,
-    use_macro: bool,
-    node_checkbox: bool,
+    options: Options,
+    node_macro_checkbox: bool,
+    array_checkbox: bool,
 }
 
 impl Default for App {
@@ -24,15 +27,17 @@ impl Default for App {
         Self {
             input: String::new(),
             output: String::new(),
-            use_macro: true,
-            node_checkbox: true,
+            options: Options::default(),
+            node_macro_checkbox: false,
+            array_checkbox: false,
         }
     }
 }
 
 impl Application<Msg> for App {
-    fn init(&mut self, _: Program<Self, Msg>) -> Cmd<Self, Msg> {
-        self.node_checkbox = self.use_macro;
+    fn init(&mut self) -> Cmd<Self, Msg> {
+        self.node_macro_checkbox = self.options.use_macro;
+        self.array_checkbox = self.options.use_array;
         Cmd::none()
     }
     fn update(&mut self, msg: Msg) -> Cmd<Self, Msg> {
@@ -41,10 +46,13 @@ impl Application<Msg> for App {
                 self.input = input;
             }
             Msg::Convert => {
-                self.output = html_to_syntax(&self.input, self.use_macro).expect("must not error");
+                self.output = html_to_syntax(&self.input, self.options).expect("must not error");
             }
             Msg::ToggleMacro => {
-                self.use_macro = !self.use_macro;
+                self.options.use_macro = !self.options.use_macro;
+            }
+            Msg::ToggleArray => {
+                self.options.use_array = !self.options.use_array;
             }
         }
         Cmd::none()
@@ -91,7 +99,7 @@ impl Application<Msg> for App {
                                         r#type("checkbox"),
                                         id("use_macro_check"),
                                         on_click(|_| Msg::ToggleMacro),
-                                        checked(self.use_macro),
+                                        checked(self.options.use_macro),
                                     ],
                                     vec![],
                                 ),
@@ -99,6 +107,17 @@ impl Application<Msg> for App {
                                     vec![r#for("use_macro_check")],
                                     vec![text("Use node! macro")],
                                 ),
+                                input(
+                                    vec![
+                                        r#type("checkbox"),
+                                        id("use_array_check"),
+                                        on_click(|_| Msg::ToggleArray),
+                                        disabled(self.options.use_macro),
+                                        checked(self.options.use_array),
+                                    ],
+                                    vec![],
+                                ),
+                                label(vec![r#for("use_array_check")], vec![text("Use array")]),
                             ],
                         ),
                     ],

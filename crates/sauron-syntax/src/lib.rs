@@ -16,8 +16,26 @@ pub use to_syntax::ToSyntax;
 
 mod to_syntax;
 
+/// Options for the html2syntax
+#[derive(Clone, Copy, Debug)]
+pub struct Options {
+    /// use the macro syntax which is very close to html
+    pub use_macro: bool,
+    /// use array instead of vec in the function call syntax
+    pub use_array: bool,
+}
+
+impl Default for Options {
+    fn default() -> Self {
+        Options {
+            use_macro: false,
+            use_array: true,
+        }
+    }
+}
+
 /// converts html to sauron view syntax
-pub fn html_to_syntax(html_str: &str, use_macro: bool) -> Result<String, ParseError> {
+pub fn html_to_syntax(html_str: &str, options: Options) -> Result<String, ParseError> {
     match html_parser::parse_simple::<()>(html_str) {
         Ok(mut nodes) => {
             let root_node = match nodes.len() {
@@ -27,12 +45,12 @@ pub fn html_to_syntax(html_str: &str, use_macro: bool) -> Result<String, ParseEr
             };
 
             let mut buffer = String::new();
-            if use_macro {
+            if options.use_macro {
                 buffer += "node! {\n";
-                root_node.to_syntax(&mut buffer, use_macro, 1)?;
+                root_node.to_syntax(&mut buffer, options, 1)?;
                 buffer += "\n}";
             } else {
-                root_node.to_syntax(&mut buffer, use_macro, 0)?;
+                root_node.to_syntax(&mut buffer, options, 0)?;
             }
             Ok(buffer)
         }
@@ -60,7 +78,14 @@ mod tests {
     div!([],[text("content2")]),
     div!([],[text("content3")]),
 ])"#;
-        let syntax = html_to_syntax(input, true).expect("must not fail");
+        let syntax = html_to_syntax(
+            input,
+            Options {
+                use_macro: true,
+                use_array: false,
+            },
+        )
+        .expect("must not fail");
         println!("syntax: {}", syntax);
         assert_eq!(expected, syntax);
     }
@@ -102,7 +127,14 @@ mod tests {
   ")]),
     ]),
 ])"#;
-        let syntax = html_to_syntax(input, true).expect("must not fail");
+        let syntax = html_to_syntax(
+            input,
+            Options {
+                use_macro: true,
+                use_array: false,
+            },
+        )
+        .expect("must not fail");
         println!("syntax: {}", syntax);
         assert_eq!(expected, syntax);
     }
@@ -135,7 +167,14 @@ mod tests {
         text!([fill("red"),font_family("monospace"),font_size(50),style("filter:url(#shadow);"),width(500),x(20),y(200),],[text("Happy birthday")]),
     ]),
 ])"#;
-        let syntax = html_to_syntax(input, true).expect("must not fail");
+        let syntax = html_to_syntax(
+            input,
+            Options {
+                use_macro: true,
+                use_array: false,
+            },
+        )
+        .expect("must not fail");
         println!("syntax: {}", syntax);
         assert_eq!(expected, syntax);
     }
