@@ -11,7 +11,8 @@ keywords = ["svg", "html", "parser"]
 
 
 [dependencies]
-sauron = "0.41"
+#sauron = "0.43"
+sauron = { version = "0.43", path = "../../../sauron" }
 log = "0.4"
-sauron-markdown = "0.41"
-#sauron-markdown = { version = "0.41", path = "../../sauron-markdown" }
+#sauron-markdown = "0.43"
+sauron-markdown = { version = "0.43", path = "../../../sauron-markdown" }

@@ -23,6 +23,9 @@ impl<MSG: 'static> ToSyntax for Node<MSG> {
                 write!(buffer, "{}", make_indent(indent))?;
                 element.to_syntax(buffer, options, indent)
             }
+            Node::Comment(comment) => {
+                write!(buffer, "comment(\"{}\")", comment)
+            }
         }
     }
 }
@@ -37,7 +40,8 @@ impl<MSG: 'static> ToSyntax for Attribute<MSG> {
                             write!(buffer, "xlink::{}", self.name().to_string(),)?;
                             write!(buffer, "=")?;
                             simple.to_syntax(buffer, options, indent)?;
-                        } else if let Some(att_name) = html_parser::match_attribute(self.name()) {
+                        } else if let Some(att_name) = html_parser::attribute_function(self.name())
+                        {
                             write!(buffer, "{}", att_name)?;
                             write!(buffer, "=")?;
                             simple.to_syntax(buffer, options, indent)?;
@@ -63,7 +67,8 @@ impl<MSG: 'static> ToSyntax for Attribute<MSG> {
                             write!(buffer, "(")?;
                             simple.to_syntax(buffer, options, indent)?;
                             write!(buffer, ")")?;
-                        } else if let Some(att_name) = html_parser::match_attribute(self.name()) {
+                        } else if let Some(att_name) = html_parser::attribute_function(self.name())
+                        {
                             write!(buffer, "{}", att_name)?;
                             write!(buffer, "(")?;
                             simple.to_syntax(buffer, options, indent)?;
